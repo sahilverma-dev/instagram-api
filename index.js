@@ -53,6 +53,7 @@ app.get("/post/:id", (req, res) => {
               user: {
                 username: json?.owner?.username,
                 isVerified: json?.owner?.is_verified,
+                fullName: json?.owner?.full_name,
                 profilePic: await getBase64(json?.owner?.profile_pic_url),
               },
               caption: {
@@ -83,18 +84,17 @@ app.get("/user/:username", (req, res) => {
         const promiseArray = json?.edge_owner_to_timeline_media?.edges?.map(
           async (item) => ({
             displayUrl: await getBase64(item?.node?.display_url),
-            resolutions: item?.node?.display_resources?.map((item) => ({
-              id: item?.node?.shortcode,
-              displayUrl: item?.node?.display_url,
-              caption: {
-                main: item?.node?.edge_media_to_caption.edges[0].node.text,
-                accessibile: item?.node?.accessibility_caption,
-              },
-              isVideo: item?.node?.is_video,
-              likes: item?.node?.edge_liked_by.count,
-              location: item?.node?.location,
-              comments: item?.node?.edge_media_to_comment.count,
-            })),
+            id: item?.node?.shortcode,
+            location: item?.node?.location,
+            caption: {
+              main: item?.node?.edge_media_to_caption.edges[0].node.text,
+              accessibile: item?.node?.accessibility_caption,
+            },
+            comments: item?.node?.edge_media_to_comment.count,
+            isVideo: item?.node?.is_video,
+            likes: item?.node?.edge_liked_by.count,
+            isCollection: item?.node?.edge_sidecar_to_children ? true : false,
+            resolutions: item?.node?.thumbnail_resources,
           })
         );
         let allImages;
@@ -104,6 +104,9 @@ app.get("/user/:username", (req, res) => {
             res?.send({
               username,
               bio: json.biography,
+              isVerified: json?.is_verified,
+              category: json?.category_name,
+              externalURL: json?.external_url,
               profilePic: {
                 sd: await getBase64(json?.profile_pic_url),
                 hd: await getBase64(json?.profile_pic_url_hd),
